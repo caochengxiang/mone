@@ -66,6 +66,10 @@ public class MybatisPlugin implements IPlugin {
 
     private boolean serverLess = false;
 
+    private static SqlSessionFactory sqlSessionFactory;
+
+    private static String mapperName = "_mapperName_";
+
 
     @SneakyThrows
     @Override
@@ -118,6 +122,7 @@ public class MybatisPlugin implements IPlugin {
                     Thread.currentThread().setContextClassLoader(ioc.getClassLoader());
                 }
                 SqlSessionFactory factory = bean.buildSqlSessionFactory();
+                MybatisPlugin.sqlSessionFactory = factory;
                 ioc.putBean("mybatis_" + beanName + config.getName(), factory);
                 if (System.getenv("mybatis_mapper_annotation") != null) {
                     factory.getConfiguration().addMappers(System.getenv("mybatis_mapper_annotation"));
@@ -134,10 +139,12 @@ public class MybatisPlugin implements IPlugin {
                             new SqlSessionInterceptor(factory)));
                     if (one) {
                         ioc.putBean(it.getName(), proxy);
+                        ioc.putBean(mapperName + it.getName(), it.getName());
                     } else {
                         String name = it.getSimpleName() + ":" + config.getName();
                         log.info("mybatis dao name:{} add", name);
                         ioc.putBean(name, proxy);
+                        ioc.putBean(mapperName + name, it.getName());
                     }
                 });
             } finally {
@@ -147,6 +154,14 @@ public class MybatisPlugin implements IPlugin {
             }
 
         }
+    }
+
+    public static SqlSessionFactory getSqlSessionFactory() {
+        return sqlSessionFactory;
+    }
+
+    public static String getMapperName() {
+        return mapperName;
     }
 
     @Override
