@@ -218,6 +218,30 @@ public class UdsServer implements IServer<UdsCommand> {
         }
     }
 
+    public UdsCommand calltmp(UdsCommand req) {
+        Stopwatch sw = Stopwatch.createStarted();
+        TraceContext context = new TraceContext();
+        context.enter();
+        long id = req.getId();
+        try {
+            String app = req.getApp();
+            CompletableFuture<UdsCommand> future = new CompletableFuture<>();
+            reqMap.put(id, future);
+            Channel channel = UdsServerContext.ins().channel(app);
+            if (null == channel || !channel.isOpen()) {
+                throw new UdsException("app:" + app + " channel is close");
+            }
+            Send.sendtmp(channel, req);
+            return future.get(req.getTimeout(), TimeUnit.MILLISECONDS);
+        } catch (Throwable ex) {
+            log.error("call time out:{} {} {} {} {} timeout:{}", req.getApp(), req.getCmd(), req.getServiceName(), req.getMethodName(), ex.getMessage(), req.getTimeout());
+            throw new UdsException(ex);
+        } finally {
+            reqMap.remove(id);
+            context.exit(new TraceEvent("server", sw.elapsed(TimeUnit.MILLISECONDS)));
+        }
+    }
+
     @Override
     public void setRegConsumer(Consumer<RpcServerInfo> regConsumer) {
         this.regConsumer = regConsumer;

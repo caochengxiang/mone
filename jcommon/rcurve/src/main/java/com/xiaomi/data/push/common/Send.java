@@ -55,6 +55,31 @@ public abstract class Send {
         }
     }
 
+    public static void sendtmp(Channel channel, UdsCommand command) {
+        if (null == channel || !channel.isOpen()) {
+            log.warn("channel is close");
+            return;
+        }
+        if (command.getSerializeType() == -1) {
+            command.setSerializeType(RcurveConfig.ins().getCodeType());
+        }
+        try {
+            log.debug("begin send:{}",command.getId());
+            ByteBuf buf = command.encodetmp();
+            ChannelFuture channelFuture = channel.writeAndFlush(buf);
+            channelFuture.addListener(new ChannelFutureListener() {
+                @Override
+                public void operationComplete(ChannelFuture channelFuture) throws Exception {
+                    if (!channelFuture.isSuccess()) {
+                        log.error("send fail:{},", command.getId(), channelFuture.cause());
+                    }
+                }
+            });
+        } catch (Throwable ex) {
+            log.error("send error:" + ex.getMessage(), ex);
+        }
+    }
+
     public static void sendResponse(Channel channel, UdsCommand response) {
         if (null == channel || !channel.isOpen()) {
             log.warn("channel is close");
@@ -63,6 +88,28 @@ public abstract class Send {
         try {
             log.debug("begin send:{}", response.getId());
             ByteBuf buf = response.encode();
+            ChannelFuture channelFuture = channel.writeAndFlush(buf);
+            channelFuture.addListener(new ChannelFutureListener() {
+                @Override
+                public void operationComplete(ChannelFuture channelFuture) throws Exception {
+                    if (!channelFuture.isSuccess()) {
+                        log.error("send fail:{},", response.getId(), channelFuture.cause());
+                    }
+                }
+            });
+        } catch (Throwable ex) {
+            log.error("send response error:" + ex.getMessage(), ex);
+        }
+    }
+
+    public static void sendResponsetmp(Channel channel, UdsCommand response) {
+        if (null == channel || !channel.isOpen()) {
+            log.warn("channel is close");
+            return;
+        }
+        try {
+            log.debug("begin send:{}", response.getId());
+            ByteBuf buf = response.encodetmp();
             ChannelFuture channelFuture = channel.writeAndFlush(buf);
             channelFuture.addListener(new ChannelFutureListener() {
                 @Override

@@ -20,6 +20,10 @@ import com.google.gson.Gson;
 import com.xiaomi.data.push.common.CovertUtils;
 import com.xiaomi.data.push.common.Send;
 import com.xiaomi.data.push.uds.classloader.ClassLoaderExecute;
+import com.xiaomi.data.push.uds.codes.CodesFactory;
+import com.xiaomi.data.push.uds.codes.HessianCodes;
+import com.xiaomi.data.push.uds.codes.ICodes;
+import com.xiaomi.data.push.uds.codes.RpcInvocation;
 import com.xiaomi.data.push.uds.context.CallContext;
 import com.xiaomi.data.push.uds.context.ContextHolder;
 import com.xiaomi.data.push.uds.po.UdsCommand;
@@ -90,7 +94,17 @@ public class CallMethodProcessor implements UdsProcessor<UdsCommand, UdsCommand>
             mr.setByteParams(req.getByteParams());
             mr.setAttachments(req.getAttachments());
             beforeCallMethod(req, mr);
-            return ReflectUtils.invokeMethod(mr, obj, (paramTypes, params) -> CovertUtils.convert(req.getSerializeType(), paramTypes, params), invokeMethodCallback);
+            if ("com.xiaomi.xiaoneng.api.service.DemoProvider".equals(req.getServiceName())) {
+                return ReflectUtils.invokeMethod(mr, obj, (paramTypes, params) -> {
+                    ICodes codes = CodesFactory.getCodes((byte)1);
+                    byte[] bytes = req.getData();
+                    Object d = codes.decode(bytes, new RpcInvocation());
+                    Object[] obs = new Object[]{d};
+                    return obs;
+                }, invokeMethodCallback);
+            } else {
+                return ReflectUtils.invokeMethod(mr, obj, (paramTypes, params) -> CovertUtils.convert(req.getSerializeType(), paramTypes, params), invokeMethodCallback);
+            }
         }, this.classLoaderFunction, response, req, (res) -> afterCallMethod(res));
         if (response.getObj() instanceof CompletableFuture) {
             ((CompletableFuture)response.getObj()).handle((obj, t) -> {
@@ -108,7 +122,19 @@ public class CallMethodProcessor implements UdsProcessor<UdsCommand, UdsCommand>
                 return response;
             });
         } else {
-            Send.sendResponse(req.getChannel(), response);
+            if ("com.xiaomi.sautumn.serverless.api.dubbo.Dubbo".equals(req.getServiceName())){
+                Send.sendResponsetmp(req.getChannel(), response);
+            } else {
+                if ("com.xiaomi.xiaoneng.api.service.DemoProvider".equals(req.getServiceName())) {
+                    Object res = response.getObj();
+                    ICodes codes = CodesFactory.getCodes((byte) 1);
+                    byte[] bytes = codes.encode(res, res);
+                    response.setData(bytes);
+                    Send.sendResponsetmp(req.getChannel(), response);
+                } else {
+                    Send.sendResponse(req.getChannel(), response);
+                }
+            }
         }
         return null;
     }

@@ -24,6 +24,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author goodjava@qq.com
@@ -37,6 +39,50 @@ public class HessianCodes implements ICodes {
         Hessian2Input hi = new Hessian2Input(is);
         try {
             return (T) hi.readObject();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                hi.close();
+                is.close();
+            } catch (Exception ex) {
+                log.error(ex.getMessage());
+            }
+        }
+    }
+
+    @Override
+    public Object decode(byte[] data, RpcInvocation inv) {
+        ByteArrayInputStream is = new ByteArrayInputStream(data);
+        Hessian2Input hi = new Hessian2Input(is);
+        try {
+            String version = hi.readString();
+            String serviceName = hi.readString();
+            String serviceVersion = hi.readString();
+            String method = hi.readString();
+            String desc = hi.readString();
+            Object obj = hi.readObject();
+            Object attachments = hi.readObject(Map.class);
+            return obj;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                hi.close();
+                is.close();
+            } catch (Exception ex) {
+                log.error(ex.getMessage());
+            }
+        }
+    };
+
+    @Override
+    public <T> T decode(byte[] data, Class type, Type type1) {
+        ByteArrayInputStream is = new ByteArrayInputStream(data);
+        Hessian2Input hi = new Hessian2Input(is);
+        try {
+            byte b = (byte) hi.readInt();
+            return (T) hi.readObject(type);
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
@@ -73,4 +119,53 @@ public class HessianCodes implements ICodes {
     public byte type() {
         return CodeType.HESSIAN;
     }
+
+    @Override
+    public byte[] encode(RpcInvocation inv) {
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        Hessian2Output ho = new Hessian2Output(os);
+        try {
+            ho.writeString("2.0.2");
+            ho.writeString(inv.getServiceName());
+            ho.writeString(inv.getAttachments().get("version").toString());
+            ho.writeString(inv.getMethodName());
+            ho.writeString(inv.getParameterTypesDesc());
+            for (Object obj : inv.getArgs()) {
+                ho.writeObject(obj);
+            }
+            ho.writeObject(inv.getAttachments());
+            ho.flush();
+            return os.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                ho.close();
+                os.close();
+            } catch (Exception ex) {
+                log.error(ex.getMessage());
+            }
+        }
+    }
+
+    @Override
+    public byte[] encode(Object obj, Object obj1) {
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        Hessian2Output ho = new Hessian2Output(os);
+        try {
+            ho.writeInt((byte)1);
+            ho.writeObject(obj);
+            ho.flush();
+            return os.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                ho.close();
+                os.close();
+            } catch (Exception ex) {
+                log.error(ex.getMessage());
+            }
+        }
+    };
 }

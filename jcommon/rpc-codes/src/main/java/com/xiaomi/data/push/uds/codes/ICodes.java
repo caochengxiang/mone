@@ -26,8 +26,23 @@ public interface ICodes {
 
     <T> T decode(byte[] data, Type type);
 
+    default  <T> T decode(byte[] data, Class cl, Type type1) {
+        return null;
+    }
+
+    default Object decode(byte[] data, RpcInvocation inv) {
+        return null;
+    };
+
     <T> byte[] encode(T t);
 
     byte type();
 
+    default byte[] encode(RpcInvocation inv) {
+        return null;
+    };
+
+    default byte[] encode(Object obj, Object obj1) {
+        return null;
+    };
 }

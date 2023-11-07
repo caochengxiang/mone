@@ -26,7 +26,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>rcurve</artifactId>
-    <version>1.4.1-tmp-SNAPSHOT</version>
+    <version>1.4.1-tmptmp-SNAPSHOT</version>
 
     <dependencies>
         <dependency>
@@ -50,7 +50,7 @@
         <dependency>
             <groupId>run.mone</groupId>
             <artifactId>rpc-codes</artifactId>
-            <version>1.4-SNAPSHOT</version>
+            <version>1.4-zp-SNAPSHOT</version>
             <exclusions>
                 <exclusion>
                     <groupId>run.mone</groupId>

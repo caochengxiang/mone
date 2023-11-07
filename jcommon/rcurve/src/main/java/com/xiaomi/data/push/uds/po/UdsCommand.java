@@ -140,6 +140,63 @@ public class UdsCommand extends RpcCommand implements Serializable {
         return buf;
     }
 
+    public ByteBuf encodetmp() {
+        // magic flag meta  (methodInfo <cmd serviceName methodName paramTypes params byteParams mesh code message>)  serializeType  payload
+        int methodInfoSize = 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1;
+        CompositeByteBuf buf = Unpooled.compositeBuffer(1 + 1 + 1 + this.attachments.size() + methodInfoSize + 1 + 1);
+        //magic
+        buf.addComponents(true, Unpooled.buffer(1).writeByte(14));
+        //flag
+        buf.addComponents(true, Unpooled.buffer(4).writeInt(this.flag));
+        //meta
+        buf.addComponents(true, Unpooled.buffer(4).writeInt(this.attachments.size()));
+        this.attachments.forEach((k, v) -> {
+            byte[] kk = bytesCodes.encode(k);
+            byte[] vv = bytesCodes.encode(v);
+            buf.addComponents(true, Unpooled.wrappedBuffer(kk, vv));
+        });
+
+        //method info
+        buf.addComponents(true, Unpooled.wrappedBuffer(bytesCodes.encode(this.id)));
+        buf.addComponents(true, Unpooled.wrappedBuffer(bytesCodes.encode(getStr(this.app))));
+        buf.addComponents(true, Unpooled.wrappedBuffer(bytesCodes.encode(getStr(this.remoteApp))));
+        buf.addComponents(true, Unpooled.wrappedBuffer(bytesCodes.encode(this.timeout)));
+        buf.addComponents(true, Unpooled.wrappedBuffer(bytesCodes.encode(getStr(this.cmd))));
+        buf.addComponents(true, Unpooled.wrappedBuffer(bytesCodes.encode(getStr(this.serviceName))));
+        buf.addComponents(true, Unpooled.wrappedBuffer(bytesCodes.encode(getStr(this.methodName))));
+        buf.addComponents(true, Unpooled.wrappedBuffer(bytesCodes.encode(getStrs(this.paramTypes))));
+        buf.addComponents(true, Unpooled.wrappedBuffer(bytesCodes.encode(getStrs(this.params))));
+        buf.addComponents(true, Unpooled.wrappedBuffer(bytesCodes.encode(this.byteParams)));
+        buf.addComponents(true, Unpooled.wrappedBuffer(bytesCodes.encode(this.mesh)));
+        buf.addComponents(true, Unpooled.wrappedBuffer(bytesCodes.encode(this.code)));
+        buf.addComponents(true, Unpooled.wrappedBuffer(bytesCodes.encode(getStr(this.message))));
+
+        //serializeType
+        buf.addComponents(true, Unpooled.wrappedBuffer(new byte[]{this.serializeType}));
+
+        if (null != this.data && this.data.length > 0) {
+            //里边已经有数据了
+        } else if (null != this.obj) {
+            //ICodes codes = CodesFactory.getCodes(this.serializeType);
+            if (this.obj instanceof Byte[]) {
+                byte[] bytes = new byte[((Byte[]) obj).length];
+                for(int i=0; i<((Byte[]) obj).length; i++) {
+                    bytes[i] = ((Byte[])obj)[i];
+                }
+                this.data = bytes;
+            } else {
+                this.data = (byte[]) this.obj;
+            }
+        } else {
+            this.data = new byte[]{};
+        }
+
+        //playload
+        buf.addComponents(true, Unpooled.buffer(4).writeInt(this.data.length));
+        buf.addComponents(true, Unpooled.wrappedBuffer(this.data));
+        return buf;
+    }
+
 
     private String getStr(String str) {
         return Optional.ofNullable(str).orElse("");
