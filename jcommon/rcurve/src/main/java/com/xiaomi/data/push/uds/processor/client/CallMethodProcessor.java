@@ -100,7 +100,7 @@ public class CallMethodProcessor implements UdsProcessor<UdsCommand, UdsCommand>
             mr.setAttachments(req.getAttachments());
             beforeCallMethod(req, mr);
             if (!"com.xiaomi.sautumn.serverless.api.dubbo.Dubbo".equals(req.getServiceName()) && !req.getAttachments().isEmpty() && "dubbo".equals(req.getAttachments().get("alias"))) {
-                //mesh dubbo provider使用
+                //进入mesh dubbo provider业务代码前使用
                 return ReflectUtils.invokeMethod(mr, obj, (paramTypes, params) -> {
                     byte[] bytes = req.getData();
                     Object[] objs = new Object[mr.getParamTypes().length];
@@ -152,16 +152,15 @@ public class CallMethodProcessor implements UdsProcessor<UdsCommand, UdsCommand>
         } else {
             if ("com.xiaomi.sautumn.serverless.api.dubbo.Dubbo".equals(req.getServiceName())){
                 Send.sendResponsetmp(req.getChannel(), response);
+            } else if (!"com.xiaomi.sautumn.serverless.api.dubbo.Dubbo".equals(req.getServiceName()) && !req.getAttachments().isEmpty() && "dubbo".equals(req.getAttachments().get("alias"))){
+                // 执行完成mesh dubbo provider业务代码后使用
+                Object res = response.getObj();
+                ICodes codes = CodesFactory.getCodes((byte) 1);
+                byte[] bytes = codes.encode(res, res);
+                response.setData(bytes);
+                Send.sendResponsetmp(req.getChannel(), response);
             } else {
-                if ("com.xiaomi.xiaoneng.api.service.DemoProvider".equals(req.getServiceName())) {
-                    Object res = response.getObj();
-                    ICodes codes = CodesFactory.getCodes((byte) 1);
-                    byte[] bytes = codes.encode(res, res);
-                    response.setData(bytes);
-                    Send.sendResponsetmp(req.getChannel(), response);
-                } else {
-                    Send.sendResponse(req.getChannel(), response);
-                }
+                Send.sendResponse(req.getChannel(), response);
             }
         }
         return null;
