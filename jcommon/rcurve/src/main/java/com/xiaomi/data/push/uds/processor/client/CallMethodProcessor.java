@@ -16,6 +16,7 @@
 
 package com.xiaomi.data.push.uds.processor.client;
 
+import com.alibaba.com.caucho.hessian.io.Hessian2Input;
 import com.google.gson.Gson;
 import com.xiaomi.data.push.common.CovertUtils;
 import com.xiaomi.data.push.common.Send;
@@ -35,7 +36,11 @@ import com.xiaomi.youpin.docean.common.ReflectUtils;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.function.BiFunction;
@@ -94,13 +99,36 @@ public class CallMethodProcessor implements UdsProcessor<UdsCommand, UdsCommand>
             mr.setByteParams(req.getByteParams());
             mr.setAttachments(req.getAttachments());
             beforeCallMethod(req, mr);
-            if ("com.xiaomi.xiaoneng.api.service.DemoProvider".equals(req.getServiceName())) {
+            if (!"com.xiaomi.sautumn.serverless.api.dubbo.Dubbo".equals(req.getServiceName()) && !req.getAttachments().isEmpty() && "dubbo".equals(req.getAttachments().get("alias"))) {
+                //mesh dubbo provider使用
                 return ReflectUtils.invokeMethod(mr, obj, (paramTypes, params) -> {
-                    ICodes codes = CodesFactory.getCodes((byte)1);
                     byte[] bytes = req.getData();
-                    Object d = codes.decode(bytes, new RpcInvocation());
-                    Object[] obs = new Object[]{d};
-                    return obs;
+                    Object[] objs = new Object[mr.getParamTypes().length];
+                    ByteArrayInputStream is = new ByteArrayInputStream(bytes);
+                    Hessian2Input hi = new Hessian2Input(is);
+                    try {
+                        //反序列化dubbo body
+                        String version = hi.readString();
+                        String serviceName = hi.readString();
+                        String serviceVersion = hi.readString();
+                        String method = hi.readString();
+                        String desc = hi.readString();
+                        for (int i=0; i<mr.getParamTypes().length; i++) {
+                            objs[i] = hi.readObject();
+                        }
+                        //todo dubbo的attachments处理
+//                      Object attachments = hi.readObject(Map.class);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    } finally {
+                        try {
+                            hi.close();
+                            is.close();
+                        } catch (Exception ex) {
+                            log.error(ex.getMessage());
+                        }
+                    }
+                    return objs;
                 }, invokeMethodCallback);
             } else {
                 return ReflectUtils.invokeMethod(mr, obj, (paramTypes, params) -> CovertUtils.convert(req.getSerializeType(), paramTypes, params), invokeMethodCallback);
