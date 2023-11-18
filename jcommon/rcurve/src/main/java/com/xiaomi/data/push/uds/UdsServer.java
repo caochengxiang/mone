@@ -218,7 +218,7 @@ public class UdsServer implements IServer<UdsCommand> {
         }
     }
 
-    public UdsCommand calltmp(UdsCommand req) {
+    public UdsCommand callDubbo(UdsCommand req) {
         Stopwatch sw = Stopwatch.createStarted();
         TraceContext context = new TraceContext();
         context.enter();
@@ -231,7 +231,7 @@ public class UdsServer implements IServer<UdsCommand> {
             if (null == channel || !channel.isOpen()) {
                 throw new UdsException("app:" + app + " channel is close");
             }
-            Send.sendtmp(channel, req);
+            Send.sendDubboRequest(channel, req);
             return future.get(req.getTimeout(), TimeUnit.MILLISECONDS);
         } catch (Throwable ex) {
             log.error("call time out:{} {} {} {} {} timeout:{}", req.getApp(), req.getCmd(), req.getServiceName(), req.getMethodName(), ex.getMessage(), req.getTimeout());

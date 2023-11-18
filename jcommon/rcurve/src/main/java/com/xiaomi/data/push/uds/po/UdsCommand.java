@@ -140,7 +140,7 @@ public class UdsCommand extends RpcCommand implements Serializable {
         return buf;
     }
 
-    public ByteBuf encodetmp() {
+    public ByteBuf encodeDubbo() {
         // magic flag meta  (methodInfo <cmd serviceName methodName paramTypes params byteParams mesh code message>)  serializeType  payload
         int methodInfoSize = 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1;
         CompositeByteBuf buf = Unpooled.compositeBuffer(1 + 1 + 1 + this.attachments.size() + methodInfoSize + 1 + 1);

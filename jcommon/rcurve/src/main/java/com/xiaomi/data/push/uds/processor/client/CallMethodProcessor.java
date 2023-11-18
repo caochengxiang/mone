@@ -151,14 +151,14 @@ public class CallMethodProcessor implements UdsProcessor<UdsCommand, UdsCommand>
             });
         } else {
             if ("com.xiaomi.sautumn.serverless.api.dubbo.Dubbo".equals(req.getServiceName())){
-                Send.sendResponsetmp(req.getChannel(), response);
+                Send.sendDubboResponse(req.getChannel(), response);
             } else if (!"com.xiaomi.sautumn.serverless.api.dubbo.Dubbo".equals(req.getServiceName()) && !req.getAttachments().isEmpty() && "dubbo".equals(req.getAttachments().get("alias"))){
                 // 执行完成mesh dubbo provider业务代码后使用
                 Object res = response.getObj();
                 ICodes codes = CodesFactory.getCodes((byte) 1);
-                byte[] bytes = codes.encode(res, res);
+                byte[] bytes = codes.encodeDubboResponse(res);
                 response.setData(bytes);
-                Send.sendResponsetmp(req.getChannel(), response);
+                Send.sendDubboResponse(req.getChannel(), response);
             } else {
                 Send.sendResponse(req.getChannel(), response);
             }

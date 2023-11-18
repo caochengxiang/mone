@@ -55,7 +55,7 @@ public abstract class Send {
         }
     }
 
-    public static void sendtmp(Channel channel, UdsCommand command) {
+    public static void sendDubboRequest(Channel channel, UdsCommand command) {
         if (null == channel || !channel.isOpen()) {
             log.warn("channel is close");
             return;
@@ -65,7 +65,7 @@ public abstract class Send {
         }
         try {
             log.debug("begin send:{}",command.getId());
-            ByteBuf buf = command.encodetmp();
+            ByteBuf buf = command.encodeDubbo();
             ChannelFuture channelFuture = channel.writeAndFlush(buf);
             channelFuture.addListener(new ChannelFutureListener() {
                 @Override
@@ -102,14 +102,14 @@ public abstract class Send {
         }
     }
 
-    public static void sendResponsetmp(Channel channel, UdsCommand response) {
+    public static void sendDubboResponse(Channel channel, UdsCommand response) {
         if (null == channel || !channel.isOpen()) {
             log.warn("channel is close");
             return;
         }
         try {
             log.debug("begin send:{}", response.getId());
-            ByteBuf buf = response.encodetmp();
+            ByteBuf buf = response.encodeDubbo();
             ChannelFuture channelFuture = channel.writeAndFlush(buf);
             channelFuture.addListener(new ChannelFutureListener() {
                 @Override

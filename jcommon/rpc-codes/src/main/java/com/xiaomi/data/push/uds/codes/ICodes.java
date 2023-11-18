@@ -26,7 +26,7 @@ public interface ICodes {
 
     <T> T decode(byte[] data, Type type);
 
-    default  <T> T decode(byte[] data, Class cl, Type type1) {
+    default  <T> T decodeDubboResult(byte[] data, Class cl) {
         return null;
     }
 
@@ -38,11 +38,11 @@ public interface ICodes {
 
     byte type();
 
-    default byte[] encode(RpcInvocation inv) {
+    default byte[] encodeDubboRequest(RpcInvocation inv) {
         return null;
     };
 
-    default byte[] encode(Object obj, Object obj1) {
+    default byte[] encodeDubboResponse(Object obj) {
         return null;
     };
 }

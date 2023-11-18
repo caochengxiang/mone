@@ -77,12 +77,12 @@ public class HessianCodes implements ICodes {
     };
 
     @Override
-    public <T> T decode(byte[] data, Class type, Type type1) {
+    public <T> T decodeDubboResult(byte[] data, Class cl) {
         ByteArrayInputStream is = new ByteArrayInputStream(data);
         Hessian2Input hi = new Hessian2Input(is);
         try {
             byte b = (byte) hi.readInt();
-            return (T) hi.readObject(type);
+            return (T) hi.readObject(cl);
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
@@ -121,7 +121,7 @@ public class HessianCodes implements ICodes {
     }
 
     @Override
-    public byte[] encode(RpcInvocation inv) {
+    public byte[] encodeDubboRequest(RpcInvocation inv) {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         Hessian2Output ho = new Hessian2Output(os);
         try {
@@ -149,7 +149,7 @@ public class HessianCodes implements ICodes {
     }
 
     @Override
-    public byte[] encode(Object obj, Object obj1) {
+    public byte[] encodeDubboResponse(Object obj) {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         Hessian2Output ho = new Hessian2Output(os);
         try {
